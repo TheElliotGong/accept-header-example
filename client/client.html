@@ -24,15 +24,61 @@
     }
   </style>
   <script>
-    const sendFetchRequest = (url, acceptedType) => {
 
+    const handleResponse = (response) => {
+      response.text().then(text => {
+        const content = document.querySelector("#content");
+        content.appendChild(document.createElement('hr'));
+
+        const h1 = document.createElement('h1');
+        const p = document.createElement('p');
+        const h2 = document.createElement('h2');
+        const data = document.createElement('p');
+
+        const contentType = response.headers.get('Content-Type');
+
+        h2.textContent = contentType;
+        data.textContent = text;
+        console.log(contentType);
+        if(contentType === 'application/json')
+        {
+          const parsedResponse = JSON.parse(text);
+          h1.textContent = `Name: ${parsedResponse.name}`;
+          p.textContent = `Age: ${parsedResponse.age}`;
+        }
+        if(contentType === 'text/xml')
+        {
+          const parsedResponse = new window.DOMParser().parseFromString(text, 'text/xml');
+          h1.textContent = 'Name:' + parsedResponse.querySelector('name').textContent;
+          p.textContent = 'Age:' + parsedResponse.querySelector('age').textContent;
+        }
+        content.appendChild(h1);
+        content.appendChild(p)
+        content.appendChild(h2);
+        content.appendChild(data);
+      })
+    };
+
+    const sendFetchRequest = (url, acceptedType) => {
+      const options = {
+        method: 'GET',
+        headers: {'Accept': acceptedType }
+      };
+      const fetchPromise = fetch(url, options);
+      fetchPromise.then(handleResponse);
     };
 
     const init = () => {
       const jsonButton = document.querySelector("#getCatsJSON");
       const xmlButton = document.querySelector("#getCatsXML");
 
+      const sendJSON = () => sendFetchRequest('/cats', 'application/json');
+      jsonButton.addEventListener('click', sendJSON);
+
+      xmlButton.addEventListener('click', () => {sendFetchRequest('/cats', 'text/xml');})
     };
+
+    
 
     window.onload = init;
 
